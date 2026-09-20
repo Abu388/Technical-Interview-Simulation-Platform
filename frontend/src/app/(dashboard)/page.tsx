@@ -1,10 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Search, Plus, Filter, Clock, Hash, FileText, DollarSign, Activity, TrendingUp, Sparkles, AlertCircle, Link2 as Link2Icon } from 'lucide-react'
 import { DifficultyBadge } from '@/components/shared/difficulty-badge'
-import { QUESTIONS, CATEGORIES } from '@/lib/data'
+import { CATEGORIES } from '@/lib/data'
+import { getQuestions } from '@/lib/api'
+import { Question } from '@/types'
 import { Difficulty } from '@/types'
 
 const STATS = [
@@ -22,11 +24,18 @@ const ACTIVITY = [
 ]
 
 export default function LibraryPage() {
+  const [questions, setQuestions] = useState<Question[]>([])
+  const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [difficulty, setDifficulty] = useState<'All' | Difficulty>('All')
   const [category, setCategory] = useState('All')
 
-  const filtered = QUESTIONS.filter(q => {
+  useEffect(() => {
+    getQuestions().then(setQuestions).catch(error => setError(error instanceof Error ? error.message : 'Unable to load questions.'))
+  }, [])
+
+  const categories = ['All', ...new Set(questions.map(question => question.category))]
+  const filtered = questions.filter(q => {
     const matchSearch = q.title.toLowerCase().includes(search.toLowerCase())
     const matchDiff = difficulty === 'All' || q.difficulty === difficulty
     const matchCat = category === 'All' || q.category === category
@@ -52,6 +61,8 @@ export default function LibraryPage() {
         </div>
 
         {/* Header */}
+        {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-xl font-bold text-slate-900">Technical Question Library</h1>
@@ -100,7 +111,7 @@ export default function LibraryPage() {
             onChange={e => setCategory(e.target.value)}
             className="px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg text-slate-700 outline-none focus:ring-2 focus:ring-indigo-200 cursor-pointer"
           >
-            {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+            {(categories.length > 1 ? categories : CATEGORIES).map(c => <option key={c} value={c}>{c}</option>)}
           </select>
 
           <select className="px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg text-slate-700 outline-none focus:ring-2 focus:ring-indigo-200 cursor-pointer">

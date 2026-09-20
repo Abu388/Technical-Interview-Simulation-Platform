@@ -44,7 +44,9 @@ AI interview/
 | 3 | `/api/interviews/links/validate/{code}/` | `GET` |
 
 - **Candidates** receive their token from `POST /api/candidates/register/`.
-- **Company owners** currently receive tokens via Django admin (no login endpoint yet — planned).
+- **Company owners** can sign in through the token endpoint below; Django admin can still be used to manage accounts.
+
+Company owners can obtain a token through `POST /api/auth/token/` with their Django username and password. The frontend settings page uses this endpoint and stores the returned token in browser local storage.
 - An unauthenticated request returns **HTTP 403** with `{"detail": "Authentication credentials were not provided."}`. The API returns 403 rather than 401 because DRF token auth emits no `WWW-Authenticate` header.
 
 ### 1.3 Standard Formats

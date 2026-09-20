@@ -4,18 +4,46 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, ArrowRight, Calendar, Timer, Hash, Building2, Briefcase } from 'lucide-react'
 import { WizardProgress } from '@/components/shared/wizard-progress'
+import { createInterview, createInterviewLink, getCompanies, getQuestions } from '@/lib/api'
 
 const TEMPLATES = ['Frontend React', 'Backend .NET', 'Flutter', 'Data Structures & Algorithms', 'System Design']
 
 export default function CreateInterviewPage() {
   const router = useRouter()
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState({
     company: 'TechCorp Inc.', job: 'Senior Frontend Engineer',
     description: 'We are looking for an experienced frontend engineer proficient in React, TypeScript, and modern web technologies to join our product team.',
     sampleInput: 'function reverseString(s) { ... }', expectedOutput: 'dlrow olleh',
-    date: '2025-08-01', time: '09:00', numQuestions: 10,
+    date: '2026-10-01', time: '09:00', numQuestions: 10,
     easy: 30, medium: 50, hard: 20,
   })
+
+  const submitInterview = async () => {
+    setSubmitting(true)
+    setError(null)
+    try {
+      const [companies, questions] = await Promise.all([getCompanies(), getQuestions()])
+      const company = companies.find(item => item.name === form.company) ?? companies[0]
+      if (!company) throw new Error('No approved company is available for this account.')
+      if (!questions.length) throw new Error('Create at least one question before creating an interview.')
+
+      const expiration = new Date(`${form.date}T${form.time}:00Z`).toISOString()
+      const interview = await createInterview({
+        company: company.id,
+        title: form.job,
+        questions: questions.slice(0, form.numQuestions).map(question => String(question.id)),
+        expiration_date: expiration,
+      })
+      await createInterviewLink({ interview: interview.id, expires_at: expiration })
+      router.push('/links')
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Unable to create the interview.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   return (
     <div className="flex-1 overflow-auto">
@@ -24,6 +52,8 @@ export default function CreateInterviewPage() {
 
         <h1 className="text-xl font-bold text-slate-900 mb-1">Create Custom Interview</h1>
         <p className="text-sm text-slate-500 mb-6">Step 1 of 3 — Technical Question Setup</p>
+
+        {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
         <div className="mb-6">
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Quick Templates</p>
@@ -161,10 +191,11 @@ export default function CreateInterviewPage() {
             <ArrowLeft size={15} />Back
           </button>
           <button
-            onClick={() => router.push('/behavioral')}
+            onClick={submitInterview}
+            disabled={submitting}
             className="flex items-center gap-2 px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
           >
-            Next<ArrowRight size={15} />
+            {submitting ? 'Creating...' : 'Create interview'}<ArrowRight size={15} />
           </button>
         </div>
       </div>

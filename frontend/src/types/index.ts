@@ -1,7 +1,7 @@
 export type Difficulty = 'Easy' | 'Medium' | 'Hard'
 
 export interface Question {
-  id: number
+  id: string | number
   title: string
   category: string
   difficulty: Difficulty

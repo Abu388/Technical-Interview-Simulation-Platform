@@ -31,6 +31,7 @@ services:
       DB_PASSWORD: ${POSTGRES_PASSWORD:-interview_pass}
       DB_HOST: db
       DB_PORT: "5432"
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
     ports:
       - "8000:8000"
     depends_on:

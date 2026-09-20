@@ -1,13 +1,25 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, ArrowRight, Clock, Code2, ChevronRight } from 'lucide-react'
 import { DifficultyBadge } from '@/components/shared/difficulty-badge'
-import { QUESTIONS } from '@/lib/data'
+import { getQuestions } from '@/lib/api'
+import { Question } from '@/types'
 
 export default function ReviewQuestionPage({ params }: { params: { id: string } }) {
   const router = useRouter()
-  const q = QUESTIONS.find(item => item.id === Number(params.id)) ?? QUESTIONS[0]
+  const [q, setQuestion] = useState<Question | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    getQuestions()
+      .then(questions => setQuestion(questions.find(item => String(item.id) === params.id) ?? null))
+      .catch(error => setError(error instanceof Error ? error.message : 'Unable to load this question.'))
+  }, [params.id])
+
+  if (error) return <div className="p-8 text-sm text-red-700">{error}</div>
+  if (!q) return <div className="p-8 text-sm text-slate-500">Loading question...</div>
 
   return (
     <div className="flex-1 overflow-auto">

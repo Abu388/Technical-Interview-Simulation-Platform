@@ -1,17 +1,24 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Plus, ListChecks, BarChart3, Zap, Clock, Building2, Calendar,
   FileText, User, Link2, Copy, Check, Share2, Eye, RefreshCw, Download,
 } from 'lucide-react'
 import { StatusBadge } from '@/components/shared/status-badge'
-import { INTERVIEWS } from '@/lib/data'
+import { getInterviewLinks } from '@/lib/api'
+import { Interview } from '@/types'
 
 export default function GeneratedLinksPage() {
   const router = useRouter()
+  const [interviews, setInterviews] = useState<Interview[]>([])
+  const [error, setError] = useState<string | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
+
+  useEffect(() => {
+    getInterviewLinks().then(setInterviews).catch(error => setError(error instanceof Error ? error.message : 'Unable to load interviews.'))
+  }, [])
 
   const copy = (id: string, link: string) => {
     navigator.clipboard.writeText(link)
@@ -20,10 +27,10 @@ export default function GeneratedLinksPage() {
   }
 
   const summaryCards = [
-    { label: 'Total Interviews', value: INTERVIEWS.length, icon: ListChecks, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-    { label: 'Questions Generated', value: INTERVIEWS.reduce((a, b) => a + b.questions, 0), icon: BarChart3, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Active Links', value: INTERVIEWS.filter(i => i.status === 'Active').length, icon: Zap, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Expired Links', value: INTERVIEWS.filter(i => i.status === 'Expired').length, icon: Clock, color: 'text-slate-500', bg: 'bg-slate-100' },
+    { label: 'Total Interviews', value: interviews.length, icon: ListChecks, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    { label: 'Questions Generated', value: interviews.reduce((a, b) => a + b.questions, 0), icon: BarChart3, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Active Links', value: interviews.filter(i => i.status === 'Active').length, icon: Zap, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'Expired Links', value: interviews.filter(i => i.status === 'Expired').length, icon: Clock, color: 'text-slate-500', bg: 'bg-slate-100' },
   ]
 
   return (
@@ -42,6 +49,8 @@ export default function GeneratedLinksPage() {
           </button>
         </div>
 
+        {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+
         <div className="grid grid-cols-4 gap-4 mb-6">
           {summaryCards.map(s => (
             <div key={s.label} className="bg-white rounded-xl border border-slate-200 p-4 flex items-start gap-3">
@@ -57,7 +66,7 @@ export default function GeneratedLinksPage() {
         </div>
 
         <div className="space-y-3">
-          {INTERVIEWS.map(inv => (
+          {interviews.map(inv => (
             <div key={inv.id} className="bg-white rounded-xl border border-slate-200 p-5 hover:border-slate-300 hover:shadow-sm transition-all">
               <div className="flex items-start gap-4">
                 <div className="flex-1 min-w-0">
